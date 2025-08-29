@@ -11,24 +11,6 @@
 
 ---
 
-# 1) Архитектура
-
-```
-Internet
-   │
-   ▼
-Yandex Cloud NLB (TCP/80) ─────┬────────► VM1 (Ubuntu)
-                               │            ├─ Nginx (host) → proxy → 127.0.0.1:3000
-                               │            ├─ Wiki.js (Docker)
-                               │            └─ Netdata (host, :19999)
-                               │
-                               └────────► VM2 (Ubuntu)
-                                            └─ Nginx (Docker, :80) → /usr/share/nginx/html
-
-Managed PostgreSQL (YC)
-  └─ FQDN и доступ из VPC; Wiki.js на VM1 подключается через PgBouncer порт :6432
-```
-
 **Сеть/доступ:**
 
 * SG **web**: вход 22/80/19999 (настраивается `trusted_cidrs`), исходящий - любой.
@@ -36,7 +18,7 @@ Managed PostgreSQL (YC)
 
 ---
 
-# 2) Предпосылки
+# 1) Предпосылки
 
 1. **Terraform** ≥ 1.7.1
 2. **Yandex Cloud CLI** (`yc`) настроен: `yc init`
@@ -45,7 +27,7 @@ Managed PostgreSQL (YC)
 
 ---
 
-# 3) Репо и файлы
+# 2) Репо и файлы
 
 ```
 Terraform/
@@ -62,9 +44,9 @@ Terraform/
 
 ---
 
-# 4) Переменные окружения и секреты
+# 3) Переменные окружения и секреты
 
-## 4.1. `secrets.env` (локально, **в .gitignore**)
+## 3.1. `secrets.env` (локально, **в .gitignore**)
 
 ```bash
 # генерация краткоживущего токена каждый запуск (или подставьте свой OAuth/IAM токен)
@@ -80,13 +62,13 @@ export YC_FOLDER_ID="<your_folder_id>"
 source Terraform/secrets.env
 ```
 
-## 4.2. `secret.auto.tfvars` (локально, **в .gitignore**)
+## 3.2. `secret.auto.tfvars` (локально, **в .gitignore**)
 
 ```hcl
 db_password = "SuperSecret123!"  # пример; используйте сложный пароль
 ```
 
-## 4.3. `nonsecret.auto.tfvars` (коммитим)
+## 3.3. `nonsecret.auto.tfvars` (коммитим)
 
 ```hcl
 zone        = "ru-central1-a"
@@ -106,28 +88,28 @@ resource_tags = {
 
 ---
 
-# 5) Развёртывание
+# 4) Развёртывание
 
-## 5.1. Инициализация окружения
+## 4.1. Инициализация окружения
 
 ```bash
 cd Terraform
 source ./secrets.env
 ```
 
-## 5.2. Инициализация Terraform
+## 4.2. Инициализация Terraform
 
 ```bash
 terraform init
 ```
 
-## 5.3. План
+## 4.3. План
 
 ```bash
 terraform plan -out tf.plan
 ```
 
-## 5.4. Применение
+## 4.4. Применение
 
 ```bash
 terraform apply tf.plan
@@ -137,7 +119,7 @@ terraform apply tf.plan
 
 ---
 
-# 6) Результаты и доступ
+# 5) Результаты и доступ
 
 После `apply` посмотрите выводы:
 
@@ -165,7 +147,7 @@ curl -I $(terraform output -raw netdata_url_vm1)
 
 ---
 
-# 7) Безопасность
+# 6) Безопасность
 
 * SG **web** пропускает 22/80/19999 из `trusted_cidrs`. Для демонстрации оставлено `0.0.0.0/0`, **в проде сузьте**.
 * SG **db** пускает 5432/6432 **только** из подсети `vpc_cidr` (приложения из VPC).
@@ -174,7 +156,7 @@ curl -I $(terraform output -raw netdata_url_vm1)
 
 ---
 
-# 8) Управление и удаление
+# 7) Управление и удаление
 
 Посмотреть ресурсы:
 
@@ -190,7 +172,7 @@ terraform destroy -auto-approve
 
 ---
 
-# 9) Тонкости и замечания
+# 8) Тонкости и замечания
 
 1. **PostgreSQL модуль**: в некоторых версиях параметр `attach_security_group_ids` может отсутствовать — тогда SG применяйте отдельно (см. комментарий в коде).
 2. **cloud-init** в `metadata.user-data` ставит Docker/Nginx/Netdata, создаёт site‑конфиг для реверса и запускает Wiki.js в Docker на VM1.
@@ -200,7 +182,7 @@ terraform destroy -auto-approve
 
 ---
 
-# 10) Что можно улучшить (для уровня “мидл”)
+# 9) Что можно улучшить (для уровня “мидл”)
 
 * **Remote backend** для `tfstate` (Yandex Object Storage, S3 backend).
 * **Workspaces** или отдельные стеки для `dev/stage/prod`.
@@ -211,7 +193,7 @@ terraform destroy -auto-approve
 
 ---
 
-# 11) Быстрый старт (шпаргалка)
+# 10) Быстрый старт (шпаргалка)
 
 ```bash
 # 1) Авторизация в YC и подготовка переменных окружения
@@ -238,6 +220,6 @@ terraform destroy -auto-approve
 
 ---
 
-# 12) Лицензия и отказ от ответственности
+# 11) Лицензия и отказ от ответственности
 
 Проект учебный, **без гарантий**. Используйте аккуратно и не забывайте чистить ресурсы, чтобы не тратить бюджет.
