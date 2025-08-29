@@ -2,7 +2,7 @@
 .terraform.lock.hcl
 .terraform/
 
-# Terraform state (никогда не в гит)
+# Terraform state 
 *.tfstate
 *.tfstate.*
 main.backup.tfvars
@@ -14,7 +14,7 @@ crash.*
 *.tfplan
 plan.*
 
-# Varfiles: игнорим все auto.tfvars, КРОМЕ nonsecret.auto.tfvars
+# Varfiles: игнорим
 *.auto.tfvars
 !nonsecret.auto.tfvars
 
